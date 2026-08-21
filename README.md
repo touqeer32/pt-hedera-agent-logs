@@ -1,5 +1,7 @@
 # Audit Anchor Service
 
+![PharmaTrace Audit Anchor and Hedera Architecture](./public/flow-pt-hedera-agent-logs.png)
+
 NestJS service implementing one shared pipeline:
 
 ```text
