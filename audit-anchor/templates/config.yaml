@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "audit-anchor.fullname" . }}-config
+  labels:
+    {{- include "audit-anchor.labels" . | nindent 4 }}
+  namespace: {{ .Release.Namespace }}
+
+data:
+  PORT: {{ .Values.service.targetPort | quote }}
+  ANCHOR_MODE: {{ .Values.config.anchorMode | quote }}
+  ANCHOR_CRON: {{ .Values.config.anchorCron | quote }}
+  RECONCILIATION_CRON: {{ .Values.config.reconciliationCron | quote }}
+  BATCH_MAX_EVENTS: {{ .Values.config.batchMaxEvents | quote }}
+  MAX_BATCHES_PER_RUN: {{ .Values.config.maxBatchesPerRun | quote }}
+  HEDERA_NETWORK: {{ .Values.config.hederaNetwork | quote }}
+  MIRROR_NODE_URL: {{ .Values.config.mirrorNodeUrl | quote }}
+  SUBMISSION_UNKNOWN_WAIT_MS: {{ .Values.config.submissionUnknownWaitMs | quote }}
+  SUBMITTING_STALE_AFTER_MS: {{ .Values.config.submittingStaleAfterMs | quote }}
+  MIRROR_SEARCH_MAX_PAGES: {{ .Values.config.mirrorSearchMaxPages | quote }}

@@ -1,0 +1,113 @@
+replicaCount: 1
+image:
+  repository: 035764999992.dkr.ecr.eu-central-1.amazonaws.com/audit-anchor
+  tag: "v2.4"
+  pullPolicy: Always
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+
+service:
+  type: ClusterIP
+  # Leave empty to let Kubernetes allocate and preserve the Service IP.
+  # Set only to the existing IP after checking the cluster Service CIDR.
+  clusterIP: ""
+  port: 80
+  targetPort: 3000
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: audit-anchor.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+config:
+  anchorMode: manual
+  anchorCron: "0 */10 * * * *"
+  reconciliationCron: "0 */3 * * * *"
+  batchMaxEvents: 1000
+  maxBatchesPerRun: 10
+  hederaNetwork: testnet
+  mirrorNodeUrl: https://testnet.mirrornode.hedera.com
+  submissionUnknownWaitMs: 300000
+  submittingStaleAfterMs: 300000
+  mirrorSearchMaxPages: 10
+
+# Create this Secret outside Helm (External Secrets, Vault injector, SealedSecret,
+# or kubectl). Required keys are documented in secret.example.yaml.
+secretName: audit-anchor-secrets
+
+migrations:
+  enabled: true
+  image: postgres:17-alpine
+  backoffLimit: 3
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 192Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+probes:
+  liveness:
+    initialDelaySeconds: 10
+    periodSeconds: 10
+  readiness:
+    initialDelaySeconds: 5
+    periodSeconds: 5
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+secret:
+  create: true
+  databaseUrl: postgresql://postgres:85VcHtMniv@serialization-pg16.remote-systems.svc.cluster.local:5432/audit_anchor
+  platformAdminApiKey: YzQxN2MzYmUzZDY4OWEzNDcyNGY0MGM4OWM0YjFkMzgxYjQwNTI0NjhlZTc3MjQ2MTcyOWVlNzUwZTU1ZTdmZg==
+  hederaTopicId: 0.0.10123883
+
+
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
