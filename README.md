@@ -2,7 +2,7 @@
 
 NestJS service that anchors audit-log integrity to Hedera Consensus Service (HCS). Original audit records, leaf hashes, and Merkle proofs remain in PostgreSQL. HCS stores only the batch identifier and Merkle root.
 
-![PharmaTrace Audit Anchor and Hedera Architecture](./public/complete-flow.png)
+![PharmaTrace Audit Anchor and Hedera Architecture](./public/new-flow.png)
 
 ## End-to-end flow
 
