@@ -94,6 +94,7 @@ export interface MirrorMessageDetails {
   batchId: string;
   merkleRoot: string;
   hashAlgorithm: string;
+  eventCount?: number;
 }
 
 export interface FindBatchMessageInput {
@@ -121,12 +122,6 @@ export type MirrorNodeLookupResult =
       reason: "NOT_INDEXED" | "SEARCH_COMPLETED";
     };
 
-export interface PreparedWalletTransaction {
-  topicId: string;
-  transactionId: string;
-  transactionBytes: string;
-}
-
 export interface PrepareWalletInput {
   tenantId?: string;
   maxEvents?: number;
@@ -134,12 +129,11 @@ export interface PrepareWalletInput {
 }
 
 export interface PreparedWalletTransaction {
-  batchId:string;
+  batchId: string;
   payerAccountId: string;
   merkleRoot?: string;
   topicId: string;
-  transactionId: string;
-  transactionBytes: string;
+  message: string;
 }
 
 export interface PreparedWalletBatch extends PreparedWalletTransaction {

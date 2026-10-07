@@ -1,7 +1,7 @@
 replicaCount: 1
 image:
   repository: 035764999992.dkr.ecr.eu-central-1.amazonaws.com/audit-anchor
-  tag: "v2.4"
+  tag: "v2.7"
   pullPolicy: Always
 
 imagePullSecrets: []
@@ -59,8 +59,10 @@ config:
   reconciliationCron: "0 */3 * * * *"
   batchMaxEvents: 1000
   maxBatchesPerRun: 10
-  hederaNetwork: testnet
-  mirrorNodeUrl: https://testnet.mirrornode.hedera.com
+  hederaNetwork: mainnet
+  mirrorNodeUrl: https://mainnet.mirrornode.hedera.com
+  mirrorNodeUrlTestnet: https://testnet.mirrornode.hedera.com
+  mirrorNodeUrlMainnet: https://mainnet.mirrornode.hedera.com
   submissionUnknownWaitMs: 300000
   submittingStaleAfterMs: 300000
   mirrorSearchMaxPages: 10
@@ -98,7 +100,9 @@ secret:
   create: true
   databaseUrl: postgresql://postgres:85VcHtMniv@serialization-pg16.remote-systems.svc.cluster.local:5432/audit_anchor
   platformAdminApiKey: YzQxN2MzYmUzZDY4OWEzNDcyNGY0MGM4OWM0YjFkMzgxYjQwNTI0NjhlZTc3MjQ2MTcyOWVlNzUwZTU1ZTdmZg==
-  hederaTopicId: 0.0.10123883
+  hederaTopicId: 0.0.10905811
+  hederaTopicIdTestnet: 0.0.10123883
+  hederaTopicIdMainnet: 0.0.10905811
 
 
 

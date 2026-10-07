@@ -57,8 +57,7 @@ describe("AuditAnchorService wallet anchoring", () => {
       validateWalletPreparation: jest.fn(),
       prepareWalletTransaction: jest.fn().mockResolvedValue({
         topicId: "0.0.99",
-        transactionId: "0.0.1234@123.456",
-        transactionBytes: "signed-bytes",
+        message: '{"version":1,"batchId":"11111111-1111-4111-8111-111111111111","merkleRoot":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","hashAlgorithm":"SHA-256","eventCount":3}',
       }),
       submit: jest.fn(),
     };
@@ -96,13 +95,17 @@ describe("AuditAnchorService wallet anchoring", () => {
 
       merkleRoot: walletBatch.merkle_root,
 
+      eventCount: walletBatch.event_count,
+
       payerAccountId: "0.0.1234",
+
+      transactionId: undefined,
     });
     expect(result.eventCount).toBe(3);
     expect(result.merkleRoot).toBe(walletBatch.merkle_root);
   });
 
-  it("regenerates transaction bytes without creating a replacement batch", async () => {
+  it("regenerates the canonical message without creating a replacement batch", async () => {
     const { service, batches, hedera } = setup();
 
     await service.prepareWalletTransaction(walletBatch.id, "0.0.1234");
@@ -113,13 +116,17 @@ describe("AuditAnchorService wallet anchoring", () => {
 
       merkleRoot: walletBatch.merkle_root,
 
+      eventCount: walletBatch.event_count,
+
       payerAccountId: "0.0.1234",
+
+      transactionId: undefined,
     });
     expect(batches.markReadyForWallet).toHaveBeenCalledWith(walletBatch.id, {
       topicId: "0.0.99",
       payerAccountId: "0.0.1234",
 
-      transactionBytes: "signed-bytes",
+      message: '{"version":1,"batchId":"11111111-1111-4111-8111-111111111111","merkleRoot":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","hashAlgorithm":"SHA-256","eventCount":3}',
     });
   });
   it("records the exact prepared wallet transaction", async () => {
@@ -247,6 +254,7 @@ describe("AuditAnchorService wallet anchoring", () => {
     expect(hedera.submit).toHaveBeenCalledWith({
       batchId: serviceBatch.id,
       merkleRoot: serviceBatch.merkle_root,
+      eventCount: serviceBatch.event_count,
     });
     expect(batches.createNext).not.toHaveBeenCalled();
     expect(batches.markSubmissionUnknown).toHaveBeenCalledWith(

@@ -4,6 +4,7 @@ import { AuditAnchorService } from "./audit-anchor.service";
 import { BatchService } from "./batch.service";
 import { MirrorNodeService } from "./mirror-node.service";
 import { BatchRow } from "./types";
+import { hederaTopicId } from "./hedera-config";
 
 @Injectable()
 export class ReconciliationService {
@@ -104,7 +105,7 @@ export class ReconciliationService {
     const result = await this.mirror.findBatchMessage({
       topicId:
         batch.hedera_topic_id ??
-        this.config.getOrThrow<string>("HEDERA_TOPIC_ID"),
+        hederaTopicId(this.config),
       batchId: batch.id,
       merkleRoot: batch.merkle_root,
     });

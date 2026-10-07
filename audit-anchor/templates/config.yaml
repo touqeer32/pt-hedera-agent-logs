@@ -15,6 +15,8 @@ data:
   MAX_BATCHES_PER_RUN: {{ .Values.config.maxBatchesPerRun | quote }}
   HEDERA_NETWORK: {{ .Values.config.hederaNetwork | quote }}
   MIRROR_NODE_URL: {{ .Values.config.mirrorNodeUrl | quote }}
+  MIRROR_NODE_URL_TESTNET: {{ .Values.config.mirrorNodeUrlTestnet | quote }}
+  MIRROR_NODE_URL_MAINNET: {{ .Values.config.mirrorNodeUrlMainnet | quote }}
   SUBMISSION_UNKNOWN_WAIT_MS: {{ .Values.config.submissionUnknownWaitMs | quote }}
   SUBMITTING_STALE_AFTER_MS: {{ .Values.config.submittingStaleAfterMs | quote }}
   MIRROR_SEARCH_MAX_PAGES: {{ .Values.config.mirrorSearchMaxPages | quote }}

@@ -491,7 +491,7 @@ export class BatchService {
     input: {
       topicId: string;
       payerAccountId: string;
-      transactionBytes: string;
+      message: string;
     },
   ): Promise<void> {
     const result = await this.db.query(
@@ -505,7 +505,7 @@ export class BatchService {
 
       payer_account_id = $3,
 
-      wallet_transaction_bytes = $4,
+      wallet_transaction_bytes = NULL,
 
       last_error = NULL,
       next_retry_at = NULL
@@ -519,7 +519,6 @@ export class BatchService {
         batchId,
         input.topicId,
         input.payerAccountId,
-        input.transactionBytes,
       ],
     );
 

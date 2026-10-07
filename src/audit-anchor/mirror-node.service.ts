@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { mirrorNodeUrl } from "./hedera-config";
 import {
   FindBatchMessageInput,
   MirrorMessageDetails,
@@ -77,7 +78,23 @@ export class MirrorNodeService {
 
     const message = (await response.json()) as MirrorNodeMessageResponse;
 
-    const decoded = this.decodeMessage(message);
+    let decoded: MirrorMessageDetails;
+    try {
+      decoded = this.decodeMessage(message);
+    } catch {
+      const compactRoot = this.decodeCompactRoot(message);
+      if (!compactRoot || compactRoot !== input.merkleRoot) {
+        throw new Error(
+          "HCS message does not contain valid JSON or the prepared Merkle root",
+        );
+      }
+      decoded = {
+        version: 1,
+        batchId: input.batchId,
+        merkleRoot: compactRoot,
+        hashAlgorithm: "SHA-256",
+      };
+    }
 
     if (
       decoded.batchId !== input.batchId ||
@@ -131,8 +148,14 @@ export class MirrorNodeService {
         try {
           decoded = this.decodeMessage(message);
         } catch {
-          // The topic can contain unrelated message formats.
-          continue;
+          const compactRoot = this.decodeCompactRoot(message);
+          if (!compactRoot || compactRoot !== input.merkleRoot) continue;
+          decoded = {
+            version: 1,
+            batchId: input.batchId,
+            merkleRoot: compactRoot,
+            hashAlgorithm: "SHA-256",
+          };
         }
 
         if (
@@ -171,7 +194,22 @@ export class MirrorNodeService {
       batchId: decoded.batchId,
       merkleRoot: decoded.merkleRoot,
       hashAlgorithm: decoded.hashAlgorithm ?? "SHA-256",
+      ...(Number.isInteger(decoded.eventCount)
+        ? { eventCount: Number(decoded.eventCount) }
+        : {}),
     };
+  }
+
+  private decodeCompactRoot(message: MirrorNodeMessageResponse): string | null {
+    const text = Buffer.from(message.message, "base64").toString("utf8").trim();
+    if (!/^[A-Za-z0-9_-]{43}$/.test(text)) return null;
+
+    try {
+      const root = Buffer.from(text, "base64url").toString("hex");
+      return /^[a-f0-9]{64}$/i.test(root) ? root : null;
+    } catch {
+      return null;
+    }
   }
 
   private toFoundResult(
@@ -213,9 +251,7 @@ export class MirrorNodeService {
   }
 
   private baseUrl(): string {
-    return this.config
-      .get("MIRROR_NODE_URL", "https://testnet.mirrornode.hedera.com")
-      .replace(/\/$/, "");
+    return mirrorNodeUrl(this.config);
   }
   async verifyWalletTransaction(
     input: VerifyWalletTransactionInput,
@@ -324,7 +360,23 @@ export class MirrorNodeService {
       throw new Error("HCS payer does not match the prepared wallet");
     }
 
-    const decoded = this.decodeMessage(message);
+    let decoded: MirrorMessageDetails;
+    try {
+      decoded = this.decodeMessage(message);
+    } catch {
+      const compactRoot = this.decodeCompactRoot(message);
+      if (!compactRoot || compactRoot !== input.merkleRoot) {
+        throw new Error(
+          "HCS message does not contain valid JSON or the prepared Merkle root",
+        );
+      }
+      decoded = {
+        version: 1,
+        batchId: input.batchId,
+        merkleRoot: compactRoot,
+        hashAlgorithm: "SHA-256",
+      };
+    }
 
     if (
       decoded.batchId !== input.batchId ||

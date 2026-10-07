@@ -2,7 +2,7 @@
 
 NestJS service that anchors audit-log integrity to Hedera Consensus Service (HCS). Original audit records, leaf hashes, and Merkle proofs remain in PostgreSQL. HCS stores only the batch identifier and Merkle root.
 
-![PharmaTrace Audit Anchor and Hedera Architecture](./public/new-flow.png)
+![PharmaTrace Audit Anchor and Hedera Architecture](./public/complete-flow.png)
 
 ## End-to-end flow
 
@@ -52,8 +52,12 @@ For the current UI-wallet flow, use `ANCHOR_MODE=manual`.
 | `ANCHOR_MODE=manual` | Prevents automatic service-wallet submission |
 | `PLATFORM_ADMIN_API_KEY` | Temporary protection for audit-anchor APIs |
 | `HEDERA_NETWORK` | `testnet` or `mainnet` |
-| `HEDERA_TOPIC_ID` | HCS topic used for Merkle-root messages |
-| `MIRROR_NODE_URL` | Mirror Node used for verification |
+| `HEDERA_TOPIC_ID_TESTNET` | Testnet HCS topic; selected when `HEDERA_NETWORK=testnet` |
+| `HEDERA_TOPIC_ID_MAINNET` | Mainnet HCS topic; selected when `HEDERA_NETWORK=mainnet` |
+| `MIRROR_NODE_URL_TESTNET` | Testnet Mirror Node URL |
+| `MIRROR_NODE_URL_MAINNET` | Mainnet Mirror Node URL |
+| `HEDERA_TOPIC_ID` | Legacy fallback when a network-specific topic is not set |
+| `MIRROR_NODE_URL` | Legacy fallback when a network-specific URL is not set |
 | `SUBMISSION_UNKNOWN_WAIT_MS` | Safe wait before retrying an uncertain submission |
 | `SUBMITTING_STALE_AFTER_MS` | Age after which a stale submission is reconciled |
 | `MIRROR_SEARCH_MAX_PAGES` | Maximum Mirror Node pages searched during recovery |

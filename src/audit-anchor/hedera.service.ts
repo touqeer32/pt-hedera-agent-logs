@@ -1,23 +1,17 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import {
-  AccountId,
-  Client,
-  PrecheckStatusError,
-  PrivateKey,
-  ReceiptStatusError,
-  TopicMessageSubmitTransaction,
-  TransactionId,
-} from "@hashgraph/sdk";
+import { AccountId, Client, PrecheckStatusError, PrivateKey, ReceiptStatusError, TopicMessageSubmitTransaction } from "@hashgraph/sdk";
 
 import {
   PreparedWalletTransaction,
   HederaSubmissionReceipt,
   SubmissionUnknownError,
 } from "./types";
+import { hederaNetwork, hederaTopicId } from "./hedera-config";
 export interface SubmitBatchInput {
   batchId: string;
   merkleRoot: string;
+  eventCount: number;
 }
 
 export class SubmissionFailedError extends Error {
@@ -35,7 +29,7 @@ export class HederaService {
   constructor(private readonly config: ConfigService) {}
 
   async submit(input: SubmitBatchInput): Promise<HederaSubmissionReceipt> {
-    const network = this.config.get("HEDERA_NETWORK", "testnet");
+    const network = hederaNetwork(this.config);
 
     const client =
       network === "mainnet" ? Client.forMainnet() : Client.forTestnet();
@@ -52,7 +46,7 @@ export class HederaService {
 
     client.setOperator(operatorId, operatorKey);
 
-    const topicId = this.config.getOrThrow<string>("HEDERA_TOPIC_ID");
+    const topicId = hederaTopicId(this.config);
     let transactionId: string | undefined;
 
     try {
@@ -62,6 +56,7 @@ export class HederaService {
           batchId: input.batchId,
           merkleRoot: input.merkleRoot,
           hashAlgorithm: "SHA-256",
+          eventCount: input.eventCount,
         }),
       );
 
@@ -178,60 +173,35 @@ export class HederaService {
       batchId: string;
       merkleRoot: string;
       payerAccountId: string;
+      eventCount: number;
       transactionId?: string;
     },
   ): Promise<PreparedWalletTransaction> {
     this.validateWalletPreparation(input.payerAccountId);
 
-    const network = this.config.get("HEDERA_NETWORK", "testnet");
-
-    const client =
-      network === "mainnet" ? Client.forMainnet() : Client.forTestnet();
-
-    try {
-      const topicId = this.config.getOrThrow<string>("HEDERA_TOPIC_ID");
-
-      const payerAccount = AccountId.fromString(input.payerAccountId);
-
-      const message = Buffer.from(
-        JSON.stringify({
-          version: 1,
-          batchId: input.batchId,
-          merkleRoot: input.merkleRoot,
-          hashAlgorithm: "SHA-256",
-        }),
-      );
-
-      const transaction = await new TopicMessageSubmitTransaction()
-        .setTopicId(topicId)
-        .setMessage(message)
-        .setTransactionId(
-          input.transactionId
-            ? TransactionId.fromString(input.transactionId)
-            : TransactionId.generate(payerAccount),
-        )
-        .freezeWith(client);
-
-      return {
-        batchId: input.batchId,
-        topicId,
-        payerAccountId: input.payerAccountId,
-        transactionId: transaction.transactionId!.toString(),
-        transactionBytes: Buffer.from(transaction.toBytes()).toString("base64"),
-      };
-    } finally {
-      client.close();
+    const topicId = hederaTopicId(this.config);
+    const message = JSON.stringify({
+      version: 1,
+      batchId: input.batchId,
+      merkleRoot: input.merkleRoot,
+      hashAlgorithm: "SHA-256",
+      eventCount: input.eventCount,
+    });
+    const bytes = Buffer.byteLength(message, "utf8");
+    if (bytes > 1024) {
+      throw new Error(`HCS audit payload is ${bytes} bytes; maximum is 1024 bytes`);
     }
+    return {
+      batchId: input.batchId,
+      topicId,
+      payerAccountId: input.payerAccountId,
+      message,
+    };
   }
   validateWalletPreparation(payerAccountId: string): void {
     AccountId.fromString(payerAccountId);
 
-    this.config.getOrThrow<string>("HEDERA_TOPIC_ID");
-
-    const network = this.config.get("HEDERA_NETWORK", "testnet");
-
-    if (network !== "testnet" && network !== "mainnet") {
-      throw new Error("HEDERA_NETWORK must be testnet or mainnet");
-    }
+    hederaTopicId(this.config);
+    hederaNetwork(this.config);
   }
 }

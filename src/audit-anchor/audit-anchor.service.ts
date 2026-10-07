@@ -11,6 +11,7 @@ import { Pool, PoolClient } from "pg";
 import { PG_POOL } from "../database/database.module";
 import { BatchService } from "./batch.service";
 import { MirrorNodeService } from "./mirror-node.service";
+import { hederaTopicId } from "./hedera-config";
 
 import { HederaService, SubmissionFailedError } from "./hedera.service";
 
@@ -143,6 +144,7 @@ export class AuditAnchorService {
       const receipt = await this.hedera.submit({
         batchId: batch.id,
         merkleRoot: batch.merkle_root,
+        eventCount: Number(batch.event_count),
       });
 
       await this.batches.markSubmitted(batchId, receipt);
@@ -244,7 +246,7 @@ export class AuditAnchorService {
     const result = await this.mirror.findBatchMessage({
       topicId:
         batch.hedera_topic_id ??
-        this.config.getOrThrow<string>("HEDERA_TOPIC_ID"),
+        hederaTopicId(this.config),
       batchId: batch.id,
       merkleRoot: batch.merkle_root,
       payerAccountId: batch.payer_account_id ?? undefined,
@@ -580,6 +582,7 @@ export class AuditAnchorService {
       batchId: batch.id,
       merkleRoot: batch.merkle_root,
       payerAccountId,
+      eventCount: Number(batch.event_count),
       transactionId: batch.hedera_transaction_id ?? undefined,
     });
 
@@ -589,7 +592,7 @@ export class AuditAnchorService {
     await this.batches.markReadyForWallet(batch.id, {
       topicId: transaction.topicId,
       payerAccountId,
-      transactionBytes: transaction.transactionBytes,
+      message: transaction.message,
     });
 
     return transaction;
@@ -601,34 +604,23 @@ export class AuditAnchorService {
       throw new NotFoundException("Batch not found");
     }
 
-    let transactionBytes = batch.wallet_transaction_bytes;
+    let message: string | null = null;
 
-    if (
-      batch.submission_mode === "WALLET" &&
-      batch.status === "READY_FOR_WALLET" &&
-      !transactionBytes &&
-      batch.payer_account_id &&
-      batch.merkle_root
-    ) {
+    if (batch.submission_mode === "WALLET" && batch.payer_account_id && batch.merkle_root) {
       const transaction = await this.hedera.prepareWalletTransaction({
         batchId: batch.id,
         merkleRoot: batch.merkle_root,
         payerAccountId: batch.payer_account_id,
+        eventCount: Number(batch.event_count),
         transactionId: batch.hedera_transaction_id ?? undefined,
       });
 
-      transactionBytes = transaction.transactionBytes;
-
-      await this.batches.markReadyForWallet(batch.id, {
-        topicId: batch.hedera_topic_id ?? transaction.topicId,
-        payerAccountId: batch.payer_account_id,
-        transactionBytes,
-      });
+      message = transaction.message;
     }
 
     return {
       ...batch,
-      transactionBytes,
+      message,
       logs: await this.batches.getBatchItems(batch.id, 20),
       logsTotal: Number(batch.event_count),
       logsReturned: Math.min(Number(batch.event_count), 20),
@@ -706,6 +698,34 @@ export class AuditAnchorService {
       );
   }
   async verifyLog(auditLogId: string) {
+    try {
+      return await this.verifyLogInternal(auditLogId);
+    } catch (error) {
+      // Verification is a read operation. An unanchored log, a malformed
+      // stored proof, or a temporary Mirror Node failure must not become a
+      // 500 for the UI; it simply is not verified yet.
+      this.log.warn(
+        `Audit log verification incomplete for ${auditLogId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+
+      return {
+        auditLogId,
+        status: "VERIFICATION_INCOMPLETE",
+        assignedToBatch: false,
+        verified: false,
+        eventHashMatchesLeaf: false,
+        merkleProofValid: false,
+        hederaAnchorValid: false,
+        mirrorStatus: "UNAVAILABLE",
+        message: "Audit log could not be fully verified yet",
+        reason: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  private async verifyLogInternal(auditLogId: string) {
     const auditLog = await this.batches.getAuditLog(auditLogId);
 
     if (!auditLog) {
