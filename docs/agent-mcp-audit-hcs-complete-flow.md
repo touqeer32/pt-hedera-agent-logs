@@ -1,5 +1,7 @@
 # PharmaTrace Agent, MCP, Audit Logs, and HCS Flow
 
+For a deliverable-ready overview, see [agent-mcp-audit-hcs-abstract.md](agent-mcp-audit-hcs-abstract.md).
+
 ## 1. System roles
 
 | Component | Responsibility |
