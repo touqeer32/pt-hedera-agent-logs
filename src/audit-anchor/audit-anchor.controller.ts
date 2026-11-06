@@ -38,9 +38,11 @@ export class AuditAnchorController {
   @Get("batches") list(
     @Query("status") status?: string,
     @Query("limit") limitValue?: string,
+    @Query("tenantId") tenantId?: string,
   ) {
     return this.batches.list({
       status,
+      tenantId,
       limit: limitValue ? Number(limitValue) : 100,
     });
   }
@@ -128,13 +130,39 @@ export class AuditAnchorController {
       payerAccountId: string;
       tenantId?: string;
       maxEvents?: number;
+      allBatches?: boolean;
     },
   ) {
+    if (body.allBatches === true) {
+      return this.anchor.prepareAllWalletBatches({
+        payerAccountId: body.payerAccountId,
+        tenantId: body.tenantId,
+        maxEvents: body.maxEvents,
+      });
+    }
     return this.anchor.prepareWalletBatches({
       payerAccountId: body.payerAccountId,
       tenantId: body.tenantId,
       maxEvents: body.maxEvents,
     });
+  }
+  @Post("wallet/prepare-all")
+  @HttpCode(HttpStatus.OK)
+  prepareAllWalletBatches(
+    @Body()
+    body: {
+      payerAccountId: string;
+      tenantId?: string;
+      maxEvents?: number;
+      maxBatches?: number;
+    },
+  ) {
+    const maxBatches = Math.min(Math.max(Number(body.maxBatches ?? 1000), 1), 1000);
+    return this.anchor.prepareAllWalletBatches({
+      payerAccountId: body.payerAccountId,
+      tenantId: body.tenantId,
+      maxEvents: body.maxEvents,
+    }, maxBatches);
   }
   @Post("wallet/:batchId/submitted")
   @HttpCode(HttpStatus.ACCEPTED)

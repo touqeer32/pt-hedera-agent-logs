@@ -165,22 +165,26 @@ export class BatchService {
 
     return result.rows[0] ?? null;
   }
-  async list(input: { status?: string; limit?: number } = {}) {
+  async list(input: { status?: string; tenantId?: string; limit?: number } = {}) {
     const limit = Math.min(Math.max(Number(input.limit ?? 100), 1), 200);
+    const conditions: string[] = [];
+    const values: unknown[] = [];
 
     if (input.status) {
-      return (
-        await this.db.query(
-          "SELECT * FROM audit_batches WHERE status = $1 ORDER BY created_at DESC LIMIT $2",
-          [input.status, limit],
-        )
-      ).rows;
+      values.push(input.status);
+      conditions.push(`status = $${values.length}`);
+    }
+    if (input.tenantId) {
+      values.push(input.tenantId);
+      conditions.push(`tenant_id = $${values.length}`);
     }
 
+    values.push(limit);
+    const where = conditions.length ? ` WHERE ${conditions.join(" AND ")}` : "";
     return (
       await this.db.query(
-        "SELECT * FROM audit_batches ORDER BY created_at DESC LIMIT $1",
-        [limit],
+        `SELECT * FROM audit_batches${where} ORDER BY created_at DESC LIMIT $${values.length}`,
+        values,
       )
     ).rows;
   }
@@ -533,6 +537,7 @@ export class BatchService {
     input: {
       transactionId?: string;
       topicId: string;
+      payerAccountId?: string;
       sequenceNumber?: string;
       consensusTimestamp?: string;
     },
@@ -544,8 +549,9 @@ export class BatchService {
       status = 'SUBMITTED',
       hedera_topic_id = $2,
       hedera_transaction_id = COALESCE($3, hedera_transaction_id),
-      hedera_sequence_number = $4,
-      hedera_consensus_timestamp = $5,
+      payer_account_id = COALESCE($4, payer_account_id),
+      hedera_sequence_number = $5,
+      hedera_consensus_timestamp = $6,
       submitted_at = NOW(),
       last_error = NULL,
       next_retry_at = NOW()
@@ -561,6 +567,7 @@ export class BatchService {
         batchId,
         input.topicId,
         input.transactionId?.trim() || null,
+        input.payerAccountId?.trim() || null,
         input.sequenceNumber?.trim() || null,
         input.consensusTimestamp?.trim() || null,
       ],

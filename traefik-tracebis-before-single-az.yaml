@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{"service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout":"120","service.beta.kubernetes.io/aws-load-balancer-name":"tracebis","service.beta.kubernetes.io/aws-load-balancer-ssl-cert":"arn:aws:acm:eu-central-1:035764999992:certificate/21cd1e15-1c12-4511-bda2-a959fb98a6d4","service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy":"ELBSecurityPolicy-TLS-1-2-2017-01","service.beta.kubernetes.io/aws-load-balancer-ssl-ports":"443","service.beta.kubernetes.io/aws-load-balancer-subnets":"subnet-0739685640bc52391 , subnet-0c9031044198939c0","service.beta.kubernetes.io/aws-load-balancer-type":"nlb"},"name":"traefik-tracebis","namespace":"traefik-ingress"},"spec":{"ports":[{"name":"web","port":80,"protocol":"TCP","targetPort":"web"},{"name":"websecure","port":443,"protocol":"TCP","targetPort":"websecure"}],"selector":{"app.kubernetes.io/instance":"traefik-traefik-ingress","app.kubernetes.io/name":"traefik"},"type":"LoadBalancer"}}
+    service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "120"
+    service.beta.kubernetes.io/aws-load-balancer-name: tracebis
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:eu-central-1:035764999992:certificate/2659f935-d1ff-4547-93d4-78068b53b011
+    service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy: ELBSecurityPolicy-TLS-1-2-2017-01
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+    service.beta.kubernetes.io/aws-load-balancer-subnets: subnet-0739685640bc52391
+      , subnet-0c9031044198939c0
+    service.beta.kubernetes.io/aws-load-balancer-type: nlb
+  creationTimestamp: "2024-08-20T20:23:11Z"
+  finalizers:
+  - service.kubernetes.io/load-balancer-cleanup
+  labels:
+    k8slens-edit-resource-version: v1
+  name: traefik-tracebis
+  namespace: traefik-ingress
+  resourceVersion: "455358783"
+  uid: 2f1ae303-6b8b-4efd-9383-92d2cf0ba305
+spec:
+  allocateLoadBalancerNodePorts: true
+  clusterIP: 10.100.127.233
+  clusterIPs:
+  - 10.100.127.233
+  externalTrafficPolicy: Cluster
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: web
+    nodePort: 31952
+    port: 80
+    protocol: TCP
+    targetPort: web
+  - name: websecure
+    nodePort: 30832
+    port: 443
+    protocol: TCP
+    targetPort: websecure
+  selector:
+    app.kubernetes.io/instance: traefik-traefik-ingress
+    app.kubernetes.io/name: traefik
+  sessionAffinity: None
+  type: LoadBalancer
+status:
+  loadBalancer:
+    ingress:
+    - hostname: a2f1ae3036b8b4efd938392d2cf0ba30-d748dda6eeb8f2fa.elb.eu-central-1.amazonaws.com

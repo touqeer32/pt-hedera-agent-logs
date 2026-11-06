@@ -128,6 +128,16 @@ export interface PrepareWalletInput {
   payerAccountId: string;
 }
 
+export interface PreparedWalletBatchSet {
+  tenantId?: string;
+  payerAccountId: string;
+  maxEvents: number;
+  batchCount: number;
+  eventCount: number;
+  status: "READY_FOR_WALLET";
+  batches: PreparedWalletBatch[];
+}
+
 export interface PreparedWalletTransaction {
   batchId: string;
   payerAccountId: string;

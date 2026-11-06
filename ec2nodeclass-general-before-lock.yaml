@@ -1,0 +1,133 @@
+apiVersion: karpenter.k8s.aws/v1
+kind: EC2NodeClass
+metadata:
+  annotations:
+    karpenter.k8s.aws/ec2nodeclass-hash: "3517929384019160499"
+    karpenter.k8s.aws/ec2nodeclass-hash-version: v4
+    karpenter.sh/stored-version-migrated: "true"
+  creationTimestamp: "2024-08-16T08:28:01Z"
+  finalizers:
+  - karpenter.k8s.aws/termination
+  generation: 9
+  name: general
+  resourceVersion: "817494732"
+  uid: c9cdcb01-99f9-429f-8670-552ed3204430
+spec:
+  amiFamily: Bottlerocket
+  amiSelectorTerms:
+  - id: ami-02310dfa2227114dd
+  blockDeviceMappings:
+  - deviceName: /dev/xvdb
+    ebs:
+      deleteOnTermination: true
+      encrypted: true
+      iops: 3000
+      kmsKeyID: 8e251025-edf6-4b38-8a4f-894cb166ac13
+      throughput: 125
+      volumeSize: 20Gi
+      volumeType: gp3
+  detailedMonitoring: true
+  kubelet:
+    evictionHard:
+      memory.available: 5%
+      nodefs.available: 10%
+      nodefs.inodesFree: 10%
+    evictionMaxPodGracePeriod: 60
+    evictionSoft:
+      memory.available: 500Mi
+      nodefs.available: 15%
+      nodefs.inodesFree: 15%
+    evictionSoftGracePeriod:
+      memory.available: 1m0s
+      nodefs.available: 1m30s
+      nodefs.inodesFree: 2m0s
+    imageGCHighThresholdPercent: 70
+    imageGCLowThresholdPercent: 60
+    kubeReserved:
+      cpu: 300m
+      ephemeral-storage: 9Gi
+      memory: 400Mi
+    maxPods: 20
+    systemReserved:
+      cpu: 300m
+      ephemeral-storage: 5Gi
+      memory: 400Mi
+  metadataOptions:
+    httpEndpoint: enabled
+    httpProtocolIPv6: disabled
+    httpPutResponseHopLimit: 2
+    httpTokens: required
+  role: Karpenter-aws-fra1-pt-tnt-k8s-int-cl-20240815084705745800000004
+  securityGroupSelectorTerms:
+  - tags:
+      karpenter.sh/discovery: karpenter
+  subnetSelectorTerms:
+  - tags:
+      karpenter.sh/discovery: vpc-private
+  tags:
+    managed-by-karpenter: "true"
+status:
+  amis:
+  - id: ami-02310dfa2227114dd
+    name: bottlerocket-aws-k8s-1.35-x86_64-v1.63.0-d4932ff8
+    requirements:
+    - key: kubernetes.io/arch
+      operator: In
+      values:
+      - amd64
+  conditions:
+  - lastTransitionTime: "2026-07-30T09:31:03Z"
+    message: ""
+    observedGeneration: 9
+    reason: AMIsReady
+    status: "True"
+    type: AMIsReady
+  - lastTransitionTime: "2026-07-30T09:31:03Z"
+    message: ""
+    observedGeneration: 9
+    reason: SubnetsReady
+    status: "True"
+    type: SubnetsReady
+  - lastTransitionTime: "2026-07-30T09:31:03Z"
+    message: ""
+    observedGeneration: 9
+    reason: SecurityGroupsReady
+    status: "True"
+    type: SecurityGroupsReady
+  - lastTransitionTime: "2026-07-30T09:31:03Z"
+    message: ""
+    observedGeneration: 9
+    reason: InstanceProfileReady
+    status: "True"
+    type: InstanceProfileReady
+  - lastTransitionTime: "2026-07-30T09:49:42Z"
+    message: ""
+    observedGeneration: 9
+    reason: ValidationSucceeded
+    status: "True"
+    type: ValidationSucceeded
+  - lastTransitionTime: "2026-07-30T13:38:19Z"
+    message: ""
+    observedGeneration: 9
+    reason: CapacityReservationsReady
+    status: "True"
+    type: CapacityReservationsReady
+  - lastTransitionTime: "2026-09-14T20:17:19Z"
+    message: ""
+    observedGeneration: 9
+    reason: Ready
+    status: "True"
+    type: Ready
+  instanceProfile: aws-fra1-pt-tnt-k8s-int-cl_16893116174172043195
+  securityGroups:
+  - id: sg-00cf02397bbd6acff
+    name: eks-stack-vpc-ControlPlaneSecurityGroup-EQI4FEVGTYEB
+  - id: sg-0b919ac079f8624aa
+    name: eks-cluster-sg-aws-fra1-pt-tnt-k8s-int-cl-1298474537
+  subnets:
+  - id: subnet-04598c1463f50728f
+    zone: eu-central-1b
+    zoneID: euc1-az3
+  - id: subnet-077426b315ee59b12
+    zone: eu-central-1a
+    zoneID: euc1-az2

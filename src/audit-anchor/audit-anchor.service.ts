@@ -19,6 +19,7 @@ import {
   BatchRow,
   PreparedWalletBatch,
   PrepareWalletInput,
+  PreparedWalletBatchSet,
   SubmissionUnknownError,
   SyncOptions,
   SyncSource,
@@ -396,12 +397,6 @@ export class AuditAnchorService {
       );
     }
 
-    if (batch.payer_account_id !== payerAccountId) {
-      throw new ConflictException(
-        "Wallet payer cannot be changed for this batch",
-      );
-    }
-
     if (!batch.merkle_root) {
       throw new Error(`Batch ${batch.id} has no stored Merkle root`);
     }
@@ -452,14 +447,14 @@ export class AuditAnchorService {
       throw new BadRequestException("Topic ID does not match the prepared transaction");
     }
 
+    let transactionPayer: string | undefined;
     if (transactionId) {
-      const transactionPayer = transactionId.split("@")[0];
-
-      if (transactionPayer !== batch.payer_account_id) {
-        throw new BadRequestException(
-          "Transaction payer does not match the prepared wallet",
-        );
-      }
+      transactionPayer = transactionId.split("@")[0];
+      // The connected wallet chooses the payer at submission time. Validate
+      // that payer, but do not require it to match the account used during
+      // preparation. Persist the actual submitted payer for Mirror Node
+      // verification.
+      this.hedera.validateWalletPreparation(transactionPayer);
     }
 
     if (!transactionId) {
@@ -475,6 +470,7 @@ export class AuditAnchorService {
       await this.batches.markWalletSubmitted(batch.id, {
         transactionId,
         topicId,
+        payerAccountId: transactionPayer,
         sequenceNumber,
         consensusTimestamp,
       });
@@ -682,6 +678,66 @@ export class AuditAnchorService {
       eventCount: Number(batch.event_count),
       merkleRoot: batch.merkle_root,
       logs: await this.batches.getBatchItems(batch.id),
+    };
+  }
+  async prepareAllWalletBatches(
+    input: PrepareWalletInput,
+    maxBatches = 1000,
+  ): Promise<PreparedWalletBatchSet> {
+    if (!input.payerAccountId) {
+      throw new BadRequestException("payerAccountId is required");
+    }
+
+    this.hedera.validateWalletPreparation(input.payerAccountId);
+
+    const configuredMaximum = Number(this.config.get("BATCH_MAX_EVENTS", 1000));
+    const maxEvents = Math.min(input.maxEvents ?? configuredMaximum, configuredMaximum);
+    if (!Number.isInteger(maxEvents) || maxEvents < 1) {
+      throw new BadRequestException("maxEvents must be a positive integer");
+    }
+
+    const batches: PreparedWalletBatch[] = [];
+    for (let index = 0; index < maxBatches; index += 1) {
+      const batchId = await this.batches.createNext(
+        input.tenantId,
+        maxEvents,
+        "WALLET",
+        input.payerAccountId,
+      );
+      if (!batchId) break;
+
+      const batch = await this.batches.get(batchId);
+      if (!batch || !batch.merkle_root) {
+        throw new Error(`Prepared batch ${batchId} has no stored Merkle root`);
+      }
+
+      const transaction = await this.prepareStoredWalletTransaction(
+        batch,
+        input.payerAccountId,
+      );
+      batches.push({
+        ...transaction,
+        batchId: batch.id,
+        tenantId: batch.tenant_id,
+        status: "READY_FOR_WALLET",
+        eventCount: Number(batch.event_count),
+        merkleRoot: batch.merkle_root,
+        logs: await this.batches.getBatchItems(batch.id),
+      });
+    }
+
+    if (!batches.length) {
+      throw new NotFoundException("No unprocessed audit logs available");
+    }
+
+    return {
+      tenantId: input.tenantId,
+      payerAccountId: input.payerAccountId,
+      maxEvents,
+      batchCount: batches.length,
+      eventCount: batches.reduce((total, batch) => total + batch.eventCount, 0),
+      status: "READY_FOR_WALLET",
+      batches,
     };
   }
   async job(id: string) {

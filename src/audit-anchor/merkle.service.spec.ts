@@ -152,6 +152,7 @@ describe("AuditAnchorService wallet anchoring", () => {
     expect(batches.markWalletSubmitted).toHaveBeenCalledWith(submittedBatch.id, {
       transactionId: "0.0.1234@123.456",
       topicId: "0.0.99",
+      payerAccountId: "0.0.1234",
       sequenceNumber: "10",
       consensusTimestamp: "123.789",
     });
@@ -188,7 +189,7 @@ describe("AuditAnchorService wallet anchoring", () => {
 
     expect(batches.markWalletSubmitted).toHaveBeenCalled();
   });
-  it("rejects a prepared transaction with the wrong payer", async () => {
+  it("accepts a submitted transaction from a different payer", async () => {
     const preparedBatch: BatchRow = {
       ...walletBatch,
 
@@ -206,9 +207,19 @@ describe("AuditAnchorService wallet anchoring", () => {
         sequenceNumber: "10",
         consensusTimestamp: "123.789",
       }),
-    ).rejects.toThrow("Transaction payer does not match the prepared wallet");
+    ).resolves.toEqual({
+      accepted: true,
+      batchId: preparedBatch.id,
+      status: "SUBMITTED",
+    });
 
-    expect(batches.markWalletSubmitted).not.toHaveBeenCalled();
+    expect(batches.markWalletSubmitted).toHaveBeenCalledWith(preparedBatch.id, {
+      transactionId: "0.0.9999@123.456",
+      topicId: "0.0.99",
+      payerAccountId: "0.0.9999",
+      sequenceNumber: "10",
+      consensusTimestamp: "123.789",
+    });
   });
   it("stores Mirror Node confirmation and processing completion together", async () => {
     const submitted: BatchRow = {

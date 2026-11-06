@@ -7,7 +7,13 @@
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
     "test": "jest",
-    "hedera:create-topic": "ts-node scripts/create-hedera-topic.ts"
+    "hedera:create-topic": "ts-node scripts/create-hedera-topic.ts",
+    "import:pharmacy-sites": "node scripts/import-pharmacy-sites.mjs",
+    "import:pharmacy-orders": "node scripts/import-pharmacy-orders.mjs",
+    "generate:order-serials": "node scripts/generate-and-commission-order-serials.mjs",
+    "create:order-items": "node scripts/create-order-product-items.mjs",
+    "create:order-deliveries": "node scripts/create-order-deliveries.mjs",
+    "submit:ready-audit-batches": "node scripts/submit-ready-audit-batches.mjs"
   },
   "jest": {
     "preset": "ts-jest",
